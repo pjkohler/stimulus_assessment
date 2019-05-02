@@ -47,6 +47,7 @@ function [stim_vals, example] = number_assessment(input_images, area_format)
             temp_size = temp_size./numel(mask) * 100;
             if stim_vals(i,1) > temp_size
                 stim_vals(i,1) = temp_size;
+                num_pixels = length(find(dots == q));
             else
             end
         end
@@ -71,10 +72,19 @@ function [stim_vals, example] = number_assessment(input_images, area_format)
         
         % 5. numerosity, just count the number of dots, 
         % but erode first to get ride of any overlap
-        se = strel('disk',5,4);
-        erode_mask = imerode(mask, se);
-        erode_dots = bwlabel(erode_mask,4);
-        stim_vals(i,5) = length(unique(erode_dots))-1;
+        erode_factor = ceil(num_pixels/300);
+        num_dots = 0;
+        loop_count = 0;
+        while num_dots == 0
+            % lower the erode factor until dots survive
+            se = strel('disk', erode_factor);
+            erode_mask = imerode(mask, se);
+            erode_dots = bwlabel(erode_mask,4);
+            num_dots = length(unique(erode_dots))-1;
+            erode_factor = erode_factor - 1;
+        end
+        stim_vals(i,5) = num_dots;
+            
         
         % 4. density = convex_hull/numerosity
         stim_vals(i,4) = stim_vals(i,3)./(stim_vals(i,5));
